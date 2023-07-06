@@ -1,0 +1,551 @@
+---
+Assignemnt title: CS5811 Distributed Data Analysis
+Date: "2023-04-21"
+output:
+  html_document:
+    df_print: paged
+---
+This assignment involves analysis of a dataset involving various features and configurations of a mobile phone and predicting its price range. Linear regression and decision tree models are used to predict the price range of the mobile phone.
+
+
+The below mentioned code consists of various libraries necessary for further analysis and to train the machine learning models.
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+library(gridExtra)
+library(corrplot)
+library(dplyr)
+library(corrr)
+library(ggcorrplot)
+library(corrplot)
+library(Hmisc)
+library(tidyverse)
+library(neuralnet)
+library(neuralnet)
+library(caret)
+library(dplyr)
+```
+
+Data Preparation: The variable mobile_df stores the values from the csv file "train.csv" 
+
+```{r}
+mobile_df <- read.csv("train.csv")
+```
+
+The data frame consists of 2000 rows, comprising of various variables which affects the price_range of the mobile device.
+
+Further process involves data cleaning to remove error, inconsistencies and inaccuracies from the data set.
+
+# Data Cleaning
+
+The below function is used to see the structure, different variables and their values in the data frame. The data frame consists of only numerical values and doesn't consists of any categorical values. The machine learning model will be trained and tested using the values from the various variables. 
+```{r}
+str(mobile_df)
+```
+
+
+Sum function checks any missing value in the data set when used with is.na. 
+```{r}
+sum(is.na(mobile_df))
+summary(mobile_df)
+```
+
+From the summary and sum function results, it is seen that the following dataset doesn't consists of any missing values.
+
+The data presented includes the following variables:
+- BATTERY_POWER = Battery capacity of the device to keep it runnning.
+- BLUE = The device has bluetooth or not.
+- CLOCK_SPEED = Speed at which microprocessor executes instructions.
+- FC = Front Camera mega pixels.
+- FOUR_G = Has 4G connectivity or not.
+- INT_MEMORY = Internal memory in gigabytes
+- M_DEP = Mobile Depth in cm
+- MOBILE_WT = Weight of mobile phone.
+- N_CORES = Number of cores of processor.
+- PC = Primary camera mega pixels.
+- PX_HEIGHT = Pixel Resolution Height
+- PX_WIDTH =  Pixel Resolution Width
+- RAM = Random Access Memory in Megabytes
+- SC_H = Screen Height of mobile in cm
+- SC_W = Screen Width of mobile in cm
+- TALK_TIME = Longest time that a single battery charge will last when you are
+- THREE_G = Has 3G or not
+- TOUCH_SCREEN = Has touch screen or not
+- WIFI = Has wifi or not
+- PRICE_RANGE = Price range of the mobile device
+
+
+Histogram to visualize the numerical variables. It helps use to identify patterns, trends and potential outliers
+
+```{r}
+opar <- par(no.readonly = TRUE)
+par(mfrow = c(2,3))
+hist(mobile_df[, 1], main = names(mobile_df)[1], xlab = names(mobile_df)[1])
+hist(mobile_df[, 2], main = names(mobile_df)[2], xlab = names(mobile_df)[2])
+hist(mobile_df[, 3], main = names(mobile_df)[3], xlab = names(mobile_df)[3])
+hist(mobile_df[, 4], main = names(mobile_df)[4], xlab = names(mobile_df)[4])
+hist(mobile_df[, 5], main = names(mobile_df)[5], xlab = names(mobile_df)[5])
+hist(mobile_df[, 6], main = names(mobile_df)[6], xlab = names(mobile_df)[6])
+hist(mobile_df[, 7], main = names(mobile_df)[7], xlab = names(mobile_df)[7])
+hist(mobile_df[, 8], main = names(mobile_df)[8], xlab = names(mobile_df)[8])
+hist(mobile_df[, 9], main = names(mobile_df)[9], xlab = names(mobile_df)[9])
+hist(mobile_df[, 10], main = names(mobile_df)[10], xlab = names(mobile_df)[10])
+hist(mobile_df[, 11], main = names(mobile_df)[11], xlab = names(mobile_df)[11])
+hist(mobile_df[, 12], main = names(mobile_df)[12], xlab = names(mobile_df)[12])
+hist(mobile_df[, 13], main = names(mobile_df)[13], xlab = names(mobile_df)[13])
+hist(mobile_df[, 14], main = names(mobile_df)[14], xlab = names(mobile_df)[14])
+hist(mobile_df[, 15], main = names(mobile_df)[15], xlab = names(mobile_df)[15])
+hist(mobile_df[, 16], main = names(mobile_df)[16], xlab = names(mobile_df)[16])
+hist(mobile_df[, 17], main = names(mobile_df)[17], xlab = names(mobile_df)[17])
+hist(mobile_df[, 18], main = names(mobile_df)[18], xlab = names(mobile_df)[18])
+hist(mobile_df[, 19], main = names(mobile_df)[19], xlab = names(mobile_df)[19])
+hist(mobile_df[, 20], main = names(mobile_df)[20], xlab = names(mobile_df)[20])
+hist(mobile_df[, 21], main = names(mobile_df)[21], xlab = names(mobile_df)[21])
+par(opar)
+```
+
+The code above visualizes the underlying frequency distribution of the variables
+
+To check whether the data set consists of any outliers, boxplot function is used. The below code give us a better picture to analyse any type of outliers in the variables.
+
+```{r}
+
+boxplot(mobile_df[, 1], main = names(mobile_df)[1], xlab = names(mobile_df)[1])
+boxplot(mobile_df[, 2], main = names(mobile_df)[2], xlab = names(mobile_df)[2])
+boxplot(mobile_df[, 3], main = names(mobile_df)[3], xlab = names(mobile_df)[3])
+boxplot(mobile_df[, 4], main = names(mobile_df)[4], xlab = names(mobile_df)[4])
+boxplot(mobile_df[, 5], main = names(mobile_df)[5], xlab = names(mobile_df)[5])
+boxplot(mobile_df[, 6], main = names(mobile_df)[6], xlab = names(mobile_df)[6])
+boxplot(mobile_df[, 7], main = names(mobile_df)[7], xlab = names(mobile_df)[7])
+boxplot(mobile_df[, 8], main = names(mobile_df)[8], xlab = names(mobile_df)[8])
+boxplot(mobile_df[, 9], main = names(mobile_df)[9], xlab = names(mobile_df)[9])
+boxplot(mobile_df[, 10], main = names(mobile_df)[10], xlab = names(mobile_df)[10])
+boxplot(mobile_df[, 11], main = names(mobile_df)[11], xlab = names(mobile_df)[11])
+boxplot(mobile_df[, 12], main = names(mobile_df)[12], xlab = names(mobile_df)[12])
+boxplot(mobile_df[, 13], main = names(mobile_df)[13], xlab = names(mobile_df)[13])
+boxplot(mobile_df[, 14], main = names(mobile_df)[14], xlab = names(mobile_df)[14])
+boxplot(mobile_df[, 15], main = names(mobile_df)[15], xlab = names(mobile_df)[15])
+boxplot(mobile_df[, 16], main = names(mobile_df)[16], xlab = names(mobile_df)[16])
+boxplot(mobile_df[, 17], main = names(mobile_df)[17], xlab = names(mobile_df)[17])
+boxplot(mobile_df[, 18], main = names(mobile_df)[18], xlab = names(mobile_df)[18])
+boxplot(mobile_df[, 19], main = names(mobile_df)[19], xlab = names(mobile_df)[19])
+boxplot(mobile_df[, 20], main = names(mobile_df)[20], xlab = names(mobile_df)[20])
+boxplot(mobile_df[, 21], main = names(mobile_df)[21], xlab = names(mobile_df)[21])
+# Set up the layout and margins for the plots
+par(mfrow = c(4, 6), mar = c(2, 2, 2, 1))
+
+# Loop through the columns and create a boxplot for each column
+for (i in 1:ncol(mobile_df)) {
+  boxplot(mobile_df[, i], main = names(mobile_df)[i], xlab = names(mobile_df)[i])
+}
+
+
+```
+
+The function boxplot() is used once more on each numeric variable, but with the argument plot=FALSE to avoid plotting. The results are saved in separate variables (outliers, outliers1, etc.) to store the outlier values for each variable in the $out component of the output.
+
+```{r}
+outliers <-boxplot(mobile_df$fc, plot=FALSE)$out
+outliers1 <-boxplot(mobile_df$px_height, plot=FALSE)$out
+outliers2 <-boxplot(mobile_df$three_g, plot=FALSE)$out
+
+#The rows of the data that contain outliers are identified using the which() function, indicating that those rows need to be removed. 
+outliers_fc <- which(mobile_df$fc %in% outliers)
+outliers_px_height <- which(mobile_df$px_height %in% outliers1)
+outliers_three_g <- which(mobile_df$three_g %in% outliers2)
+
+# Combine all outlier row indexes
+all_outliers <- unique(c(outliers_fc, outliers_px_height, outliers_three_g))
+
+# Remove all outlier rows from the dataset
+newmobile_df <- mobile_df
+newmobile_df <- newmobile_df[all_outliers, ]
+
+```
+
+Checking the old and new dataframe for outliers 
+```{r}
+boxplot((newmobile_df$px_height))
+boxplot(mobile_df$px_height)
+```
+
+
+
+Correlation test between the numerical variables
+
+
+Selecting the numerical data to do the correlation plot
+
+
+The function calculates the correlation matrix and stores in res.
+```{r}
+res <- cor(newmobile_df)
+```
+
+The function below computes the correlarion matrix and displays
+```{r}
+cor(newmobile_df)
+```
+
+Calculating p-value to see whether the correlation is significant
+
+```{r}
+rcorr(as.matrix(newmobile_df))
+```
+
+Visualising the correlation. it plots a hierarchical clustered heatmap of the upper-triangle correlation matrix using res.
+
+```{r}
+corrplot(res, type = "upper", order = "hclust", 
+         tl.col = "black", tl.srt = 45)
+```
+
+
+The function below plots a correlation matrix of newmobile_df using circles to represent correlation coefficients.
+
+Explore the correlation between variables
+```{r}
+corrplot(cor(newmobile_df), method="circle")
+```
+
+
+Clustering Analysis:-------------------------------- 
+
+
+The code below uses k-means clustering on a mobile dataset to determine the ideal number of clusters. It begins by setting a random seed and loading necessary libraries. Relevant variables are selected and scaled before applying Principal Component Analysis (PCA). WCSS is calculated for various cluster sizes to determine the optimal number of clusters using the elbow method. Finally, k-means clustering is performed with the ideal number of clusters, and the results are printed and plotted.
+
+```{r}
+# Set seed for reproducibility
+set.seed(123)
+
+# Load required libraries
+library(cluster)
+
+# Select the variables from the newmobile_df dataset
+mobile_vars <- newmobile_df[,c("battery_power", "blue", "ram", "clock_speed", "dual_sim", "fc", "four_g", "int_memory", "m_dep", "mobile_wt", "n_cores", "pc", "px_height", "px_width", "sc_h", "sc_w", "talk_time", "three_g", "touch_screen", "wifi", "price_range")]
+
+# Scale the data to have zero mean and unit variance
+scaled_data <- scale(mobile_vars)
+
+# Perform PCA
+pca <- prcomp(scaled_data)
+
+# Calculate the within-cluster sum of squares (WCSS) for k values ranging from 1 to 10
+wcss <- vector(mode = "numeric", length = 10)
+for (i in 1:10) {
+  km <- kmeans(pca$x[, 1:2], centers = i, nstart = 10)
+  wcss[i] <- km$tot.withinss
+}
+
+# Plot the WCSS against the number of clusters
+plot(1:10, wcss, type = "b", pch = 19, frame = FALSE,
+     xlab = "Number of Clusters", ylab = "WCSS")
+
+# Add a vertical line at the elbow point
+elbow <- kmeans(pca$x[, 1:2], centers = 3, nstart = 10)
+abline(v = 3, lty = 2, col = "red")
+
+# Print the elbow point
+cat("Elbow point is at k =", elbow$betweenss/elbow$totss * nrow(scaled_data))
+
+# Perform k-means clustering with the optimal number of clusters (k=3 in this case)
+kmeans_results <- kmeans(pca$x[, 1:2], centers = 3, nstart = 25)
+
+# Plot the clustered data points and cluster centroids
+plot(pca$x[, 1:2], col = kmeans_results$cluster)
+points(kmeans_results$centers, col = 1:3, pch = 8, cex = 2)
+
+# Print the cluster assignments
+print(kmeans_results$cluster)
+
+```
+
+The output shows the optimal number of clusters, cluster assignment and visual representation of the clustered data points.
+
+```{r}
+plot(mobile_vars, col = kmeans_results$cluster)
+points(kmeans_results$centers, col = 1:3, pch = 8, cex = 2)
+```
+The code above uses a plot() function creates a scatter plot of the mobile variables, where each point is colored according to its assigned cluster. The points() function adds the cluster centers to the plot, colored according to their index and with a size of 2.
+
+
+
+Linear regression :--------------------------------
+
+For predicting the values of price_range linear regression analysis is used. For analyzing of the linear regression model in R, caret library is used. The dataframe after preprocessing and data cleaning is splited into the two dataframe one is test and other is train. The train dataset is used to build the linear regression and the test one is further used to predict the price range. 
+
+```{r}
+# Load required libraries
+library(caret)
+
+# Prepare the data
+x <- newmobile_df[, 1:20]  # Independent variables
+y <- newmobile_df$price_range
+
+# Split the data into training and testing sets
+set.seed(123)
+train_index <- createDataPartition(y, p = 0.8, list = FALSE)
+train_set <- newmobile_df[train_index,]
+test_set <- newmobile_df[-train_index,]
+
+# Fit the linear regression model
+linear_model <- lm(price_range ~ ., data = train_set)
+
+# Predict the price_range for the test set
+y_pred <- predict(linear_model, newdata = test_set)
+
+# Round the predictions to get the nearest integer values
+rounded_predictions <- round(y_pred)
+
+# Calculate the accuracy of the model
+accuracy <- mean(rounded_predictions == test_set$price_range)
+cat("Accuracy of the linear regression model:", accuracy)
+```
+The accuaracy of this linear regression model is 0.8673. This value is further compared with other machine learning model to test its efficiency.
+
+Further analysis is done by calculating the mean absolute error and R-squared value of the model
+```{r}
+# Calculate the mean absolute error (MAE)
+mae <- mean(abs(rounded_predictions - test_set$price_range))
+print(paste("Mean Absolute Error (MAE):", mae, "\n"))
+
+# Calculate the R-squared value
+rsq <- summary(linear_model)$r.squared
+print(paste("R-squared:", rsq))
+```
+
+
+The plot below shows a graphical representation of the actual and predicted values of the linear regression model.
+
+```{r}
+# Load required libraries
+library(ggplot2)
+
+# Create a data frame to store the actual and predicted price_range values
+results_df <- data.frame(Actual = test_set$price_range, Predicted = rounded_predictions)
+
+# Plot the relationship between the actual and predicted price_range
+ggplot(results_df, aes(x = Actual, y = Predicted)) +
+  geom_point() +
+  geom_abline(intercept = 0, slope = 1, color = "red", linetype = "dashed") +
+  labs(title = "Actual vs Predicted Price Range", x = "Actual Price Range", y = "Predicted Price Range")
+
+# Print the intercept and coefficients of the linear model
+print(paste("Intercept:", coef(linear_model)[1], "\n"))
+print(paste("Coefficients:\n"))
+print(paste(coef(linear_model)[-1]))
+
+
+```
+
+Decision tree:--------------------------------------
+
+The same train and test set which is used in linear regression model is used for the decision tree algorithm as well. For commencing the decision tree in R the rpart library is used. 
+
+```{r}
+library("rpart")
+
+# Train the decision tree model
+dec_reg <- rpart(price_range ~ ., data = train_set, method = "anova", control = rpart.control(cp = 0.0))
+
+# Make predictions on the test set
+y_pred2 <- predict(dec_reg, newdata = test_set)
+
+# Round the predictions to get the nearest integer values
+y_pred2_round <- round(y_pred2)
+
+# Calculate Mean Absolute Error
+mae <- mean(abs(test_set$price_range - y_pred2_round))
+cat("Mean Absolute Error =", mae, "\n")
+
+# Calculate R2 score
+r2 <- 1 - (sum((test_set$price_range - y_pred2_round)^2) / sum((test_set$price_range - mean(test_set$price_range))^2))
+cat("R2 score =", r2, "\n")
+
+# Calculate the accuracy of the decision tree model
+dt_accuracy <- mean(y_pred2_round == test_set$price_range)
+cat("Accuracy of the decision tree model:", dt_accuracy)
+```
+The accuracy of the decision tree model is 0.75 which is less than the linear regression accuracy of 0.86.
+For best prediction, it is analysed that linear regression model is more suitable than the decision tree ones.
+
+```{r}
+library(ggplot2)
+# Prepare the data for ggplot
+linear_df <- data.frame(true = test_set$price_range, pred = y_pred, model = "Linear Regression")
+tree_df <- data.frame(true = test_set$price_range, pred = y_pred2_round, model = "Decision Tree")
+combined_df <- rbind(linear_df, tree_df)
+
+# Plot the comparison of Linear Regression and Decision Tree models
+ggplot(combined_df, aes(x = true, y = pred, color = model)) +
+  geom_point() +
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed", color = "black") +
+  labs(title = "Comparison of Linear Regression and Decision Tree Models",
+       x = "True Price Range",
+       y = "Predicted Price Range") +
+  theme_minimal()
+```
+The above code shows a graphical representation of comparison between the linear regression and decision tree models for better predicted price ranges. It can be seen the linear regression model shows much better results and falls more closer to the actual price ranges than the predicted values from decision tree ones.
+
+Distributed Data Analysis in R using Spark:----------
+
+To access the spark in R, sparklyr must be installed
+
+```{r}
+#prior to do this step install Spark package in R
+library(sparklyr)
+spark_install()
+```
+
+
+#This is a mandatory step to establish a connect with Spark. Check the connection on the top right corner of your window. 
+```{r}
+options(sparklyr.log.console = TRUE)
+sc <- spark_connect(master = "local")
+```
+
+The previous dataset consists of variable 'newmobile_df' which consists of data without outliers. 
+```{r}
+sdf <- copy_to(sc, newmobile_df, "newmobile_df", overwrite = TRUE)
+```
+The above code imports the dataset to the spark cluster and stores it into sdf for further distributed data analysis
+
+
+Similar to the linear regression in R caret,the dataset was divided into the following train and test sets. 
+```{r}
+# Perform train-test split
+data_split <- sdf %>% sdf_random_split(training = 0.8, testing = 0.2, seed = 123)
+train_data <- data_split$training
+test_data <- data_split$testing
+```
+
+
+The following data was transformed into a format compatible with Spark MLlib. Like the previously mentioned linear regression, the price_range column was removed from the dataset to investigate the relationship between all independent variables and the dependent variable.
+
+```{r}
+# Linear regression with Spark
+train_data_lr <- train_data %>%
+  ft_vector_assembler(input_cols = setdiff(colnames(train_data), "price_range"), output_col = "features")
+
+test_data_lr <- test_data %>%
+  ft_vector_assembler(input_cols = setdiff(colnames(test_data), "price_range"), output_col = "features")
+
+
+```
+
+Linear regression model based on spark mllib has been shown below.
+```{r}
+lr_model <- train_data_lr %>% ml_linear_regression(label_col = "price_range", features_col = "features")
+```
+
+The coefficients and intercept of the linear regression line:
+```{r}
+print(lr_model$coefficients)
+print(lr_model$intercept)
+```
+
+
+Prediction was carried out to assess the model's effectiveness in predicting test data after applying the linear regression model.
+```{r}
+predictions_lr <- ml_predict(lr_model, test_data_lr)
+head(predictions_lr)
+```
+
+
+The function below round the prediction to the nearest integers
+
+```{r}
+
+predictions_lr1 <- predictions_lr %>%
+  mutate(prediction_rounded = round(prediction))
+head(predictions_lr1)
+```
+
+The below functions calculates the mean absolute errors and R2 score has been shown below: 
+
+```{r}
+
+mae_lr <- predictions_lr1 %>% ml_regression_evaluator(prediction_col = "prediction", label_col = "price_range", metric_name = "mae")
+r2_lr <- predictions_lr1 %>% ml_regression_evaluator(prediction_col = "prediction", label_col = "price_range", metric_name = "r2")
+print(paste("Mean Absolute Error =", mae_lr))
+print(paste("R2 score =", r2_lr))
+
+```
+The function below shows the accuracy of the linear regression model based on sparklyr
+```{r}
+predictions_lr2 <- predictions_lr1 %>%
+  mutate(correct = ifelse(price_range == prediction_rounded, 1, 0))
+
+# Calculate the total number of correct predictions and the total number of predictions
+summary_stats <- predictions_lr2 %>%
+  summarise(num_correct = sum(correct), total = n())
+
+# Collect the summary_stats to local R dataframe
+summary_stats_local <- collect(summary_stats)
+
+# Calculate the accuracy
+accuracy <- summary_stats_local$num_correct / summary_stats_local$total
+cat("Accuracy of the Linear Regression model:", accuracy)
+```
+The accuracy of the linear regression model based on the analysis done by spark is 0.87
+
+
+Decision Tree on Spark:----------------------------
+
+
+The function below splits the data into train and test set similar to the linear regression model in spark: 
+
+```{r}
+train_data_dt <- train_data %>%
+  ft_vector_assembler(input_cols = setdiff(colnames(train_data), "price_range"), output_col = "features")
+
+test_data_dt <- test_data %>%
+  ft_vector_assembler(input_cols = setdiff(colnames(test_data), "price_range"), output_col = "features")
+
+```
+
+Decision tree model is used
+```{r}
+dt_model <- train_data_dt %>%
+  ml_decision_tree_classifier(label_col = "price_range", features_col = "features")
+
+```
+
+Prediction is carried out using the test data in the decision tree model 
+
+```{r}
+predictions_dt <- ml_predict(dt_model, test_data_dt)
+head(predictions_dt)
+```
+
+The function below round the prediction to the nearest integers
+```{r}
+predictions_dt1 <- predictions_dt %>%
+  mutate(prediction_rounded = round(prediction))
+head(predictions_dt1)
+```
+
+The below functions calculates the mean absolute errors and R2 score has been shown below: 
+
+```{r}
+mae_lr <- predictions_dt1 %>% ml_regression_evaluator(prediction_col = "prediction", label_col = "price_range", metric_name = "mae")
+r2_lr <- predictions_dt1 %>% ml_regression_evaluator(prediction_col = "prediction", label_col = "price_range", metric_name = "r2")
+print(paste("Mean Absolute Error =", mae_lr))
+print(paste("R2 score =", r2_lr))
+```
+
+The function below shows the accuracy of the decision tree model based on sparklyr
+
+```{r}
+accuracy <- predictions_dt1 %>%
+  ml_multiclass_classification_evaluator(label_col = "price_range", prediction_col = "prediction", metric_name = "accuracy")
+
+cat("Accuracy of the Decision Tree model:", accuracy)
+
+```
+The accuracy of the linear regression model based on the analysis done by spark is 0.87 and the decision tree is 0.73. From the analysis, it can be seen that the linear regression model predicts values for price range better than the decision tree algorithm both in distributed data analysis and exploratory data analysis.
+
+Hence, the better price_range predictor model for this dataset is linear regression
+
+
